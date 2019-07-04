@@ -1,4 +1,4 @@
-# Fukushima-Nuclear-Disaster-Humans
+# Fukushima Nuclear Disaster - Human Repopulation Project
 
 
 [Initial Exploratory Data Analysis of Fukushima Boar Biometric Data](https://nbviewer.jupyter.org/github/Jared-Luxton/Fukushima-disaster-eval-safety/blob/master/Fukushima%20Radiation%20Data%20Analyses.ipynb)
