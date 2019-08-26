@@ -143,7 +143,7 @@ def count_shared_sample_IDs(df1, df2, print_names=None):
 #     common_IDs = df1_list - (df1_list - df2_list)
     common_IDs = list(df1_IDs & df2_IDs)
     
-    print(f'The number of sample sample IDs are: {len(common_IDs)}')
+    print(f'The number of sample IDs in common are: {len(common_IDs)}')
     
     if print_names == 'yes' or print_names == 'Yes':
         print(f'The sample IDs in common are:\n{common_IDs}')
