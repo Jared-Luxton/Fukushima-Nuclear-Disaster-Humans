@@ -154,9 +154,9 @@ def average_age_weeks(row):
     if '-' in str(row):
         numbers = str(row).split('-')
         average = (int(numbers[1]) + int(numbers[0])) / len(numbers)
-        return average
+        return int(average)
     else:
-        return row
+        return int(row)
         
 
         
