@@ -9,6 +9,8 @@ import seaborn as sns
 from statistics import mean 
 from ast import literal_eval
 from scipy import stats
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 
 
 def extract_boar_teloFISH_as_list(path):
@@ -190,3 +192,92 @@ def make_quartiles_columns(total_boar_telos, df):
         df.iat[i, pos_1], df.iat[i, pos_2], df.iat[i, pos_3] = (quartile_cts_rel_to_df1(total_boar_telos, boar_sample_telos))
             
     return df
+
+
+def linear_regression_graphs_between_variables(x=None, y=None, data=None, 
+                                               hue=None, col=None,
+                                               hue_order=None, col_order=None):
+    
+    if 'Binary' in y:
+        ax=sns.lmplot(x=x, y=y, hue=hue, col=col, data=data, logistic=True, 
+        height=7, aspect=1, scatter_kws={"s": 150, "edgecolor":'black'})
+    else:
+        ax=sns.lmplot(x=x, y=y, hue=hue, col=col, data=data,
+        height=7, aspect=1, scatter_kws={"s": 150, "edgecolor":'black'})
+
+    fig = ax.fig 
+
+    ax.set_xlabels(x, fontsize=18)
+    ax.set_xticklabels(fontsize=14)
+    ax.set_ylabels(y, fontsize=18)
+    ax.set_yticklabels(fontsize=14)
+    ax.set_titles(size=14)
+    
+#     if 'Cortisol' in y:
+#         ax.set(ylim=(0, 40))
+
+    plt.subplots_adjust(top=0.88)
+
+    if hue == None and col == None:
+        fig.suptitle(f'{x} vs.\n {y} in Fukushima Wild Boar', fontsize=18, 
+#                      weight='bold'
+                    )
+        ax.savefig(f"../graphs/{x} vs {y}.png", dpi=400)
+            
+#     elif hue == 'Sex' and col == 'Sex':
+#         fig.suptitle(f'{x} vs. {y}\nper Sex in Fukushima Wild Boar', fontsize=16, weight='bold')
+#         fig.legend(fontsize='large')
+#         ax.savefig(f"../graphs/{x} vs {y} per sex.png", dpi=400)
+            
+            
+def score_linear_regressions(x=None, y=None, data=None):
+    
+#     sexes = ['Male', 'Female', 'Overall']
+    sexes = ['Overall']
+
+    for sex in sexes:
+        if sex == 'Overall':
+            X_r = data[x].values.reshape(-1, len(x))
+            y_r = data[y].values.reshape(-1, 1)
+            regression = LinearRegression().fit(X_r,y_r)
+            print(f'Linear regression for {x} vs. {y}:\nOverall R2 is {regression.score(X_r, y_r):.4f}\n')
+
+        else:
+            X_r = data[data['Sex'] == sex][x].values.reshape(-1, len(x))
+            y_r = data[data['Sex'] == sex][y].values.reshape(-1, 1)
+            regression = LinearRegression().fit(X_r,y_r)
+            print(f"Linear regression for {x} vs. {y}:\nR2 for {sex}s is {regression.score(X_r, y_r):.4f}")
+
+
+            
+def eval_number(x):
+    if x > 15:
+        x = 1
+        return x
+    elif x < 15:
+        x = 0
+        return x
+        
+
+def score_logistic_regressions(x=None, y=None, data=None):
+    
+#     for y in y_cols:
+    
+    sexes = [
+#         'Male', 
+#         'Female', 
+        'Overall']
+
+    for sex in sexes:
+        if sex == 'Overall':
+            X_r = data[x].values.reshape(-1, 1)
+            y_r = data[y].values.reshape(-1, )
+            log_reg = LogisticRegression(solver='lbfgs')
+            regression = log_reg.fit(X_r,y_r)
+            print(f'Logistic regression for {x} vs. {y}:\nOverall R2 is {regression.score(X_r, y_r):.4f}\n')
+
+        else:
+            X_r = data[data['Sex'] == sex][x].values.reshape(-1, 1)
+            y_r = data[data['Sex'] == sex][y].values.reshape(-1,  )
+            regression = LinearRegression().fit(X_r,y_r)
+            print(f"Logistic regression for {x} vs. {y}:\nR2 for {sex}s is {regression.score(X_r, y_r):.4f}")
