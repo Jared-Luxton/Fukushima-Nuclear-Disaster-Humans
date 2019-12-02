@@ -103,6 +103,9 @@ def remove_dashes_space_sampleIDs(row):
 
     if '-' in str(row):
         row = str(row).replace('-', '').replace(' ', '')
+        
+    if '_' in str(row):
+        row = str(row).replace('_', '')
     
     if ' ' in str(row):
         row = str(row).replace(' ', '')
@@ -119,7 +122,7 @@ def remove_dashes_space_sampleIDs(row):
     if 'COLLAR' in str(row):
         row = str(row).replace('COLLAR', '')
     
-    return row
+    return str(row)
     
 def readable_snake_df_dummy_variables(snake_df):
 
@@ -196,14 +199,15 @@ def make_quartiles_columns(total_boar_telos, df):
 
 def linear_regression_graphs_between_variables(x=None, y=None, data=None, 
                                                hue=None, col=None,
-                                               hue_order=None, col_order=None):
+                                               hue_order=None, col_order=None,
+                                               snake=False):
     
     if 'Binary' in y:
         ax=sns.lmplot(x=x, y=y, hue=hue, col=col, data=data, logistic=True, 
-        height=7, aspect=1, scatter_kws={"s": 150, "edgecolor":'black'})
+        height=5.5, aspect=1, scatter_kws={"s": 175, "edgecolor":'black'})
     else:
         ax=sns.lmplot(x=x, y=y, hue=hue, col=col, data=data,
-        height=7, aspect=1, scatter_kws={"s": 150, "edgecolor":'black'})
+        height=5.5, aspect=1, scatter_kws={"s": 175, "edgecolor":'black'})
 
     fig = ax.fig 
 
@@ -220,14 +224,40 @@ def linear_regression_graphs_between_variables(x=None, y=None, data=None,
 
     if hue == None and col == None:
         fig.suptitle(f'{x} vs.\n {y} in Fukushima Wild Boar', fontsize=18, 
-#                      weight='bold'
                     )
-        ax.savefig(f"../graphs/{x} vs {y}.png", dpi=400)
+#         ax.savefig(f"../graphs/{x} vs {y}.png", dpi=400)
+
+    if snake:
+        fig.suptitle(f'{x} vs.\n {y} in Fukushima Wild Snake', fontsize=18, 
+                    )
             
 #     elif hue == 'Sex' and col == 'Sex':
 #         fig.suptitle(f'{x} vs. {y}\nper Sex in Fukushima Wild Boar', fontsize=16, weight='bold')
 #         fig.legend(fontsize='large')
 #         ax.savefig(f"../graphs/{x} vs {y} per sex.png", dpi=400)
+
+
+def graph_dose_age_vs_telos(df=None, x=None, x2=None, y=None):
+    f, axes = plt.subplots(1, 2, figsize=(12,5), sharey=False, sharex=False)
+    # dose vs. telomeres
+    sns.regplot(x=x, y=y, data=df, ax=axes[0], 
+                scatter_kws={'alpha':0.8, 'linewidth':1, 'edgecolor':'black', 's':df['Age (months)']*12, })
+    axes[0].set_xlabel(x, fontsize=14)
+    axes[0].set_ylabel(y, fontsize=14)
+    axes[0].tick_params(labelsize=12)
+
+
+    # age vs. telomeres
+    sns.regplot(x=x2, y=y, data=df, ax=axes[1], 
+                scatter_kws={'alpha':0.8, 'linewidth':1, 'edgecolor':'black', 's':175, })
+    axes[1].set_xlabel(x2, fontsize=14)
+    axes[1].set_xlim(-4,55)
+    axes[1].set_ylabel(y, fontsize=14)
+    if y == 'teloFISH means':
+        axes[1].set_ylim(0.2,1.6)
+    if y == 'Mean Telomere Length (qPCR)':
+        axes[1].set_ylim(0.6,1.8)
+    axes[1].tick_params(labelsize=12)
             
             
 def score_linear_regressions(x=None, y=None, data=None):
@@ -281,3 +311,48 @@ def score_logistic_regressions(x=None, y=None, data=None):
             y_r = data[data['Sex'] == sex][y].values.reshape(-1,  )
             regression = LinearRegression().fit(X_r,y_r)
             print(f"Logistic regression for {x} vs. {y}:\nR2 for {sex}s is {regression.score(X_r, y_r):.4f}")
+            
+            
+def encode_sex(row):
+    if row == 'Male':
+        return 1
+    elif row == 'Female':
+        return 0
+    else:
+        print(f'ERROR.. row == {row}')
+        
+        
+def merge_return_df_cols_interest(dose_df, cortisol_df, cols_of_interest):
+    merge_dose_cortisol = dose_df.merge(cortisol_df, on=['Sample ID'])
+    trim_dose_cortisol = merge_dose_cortisol[cols_of_interest].copy()
+    return trim_dose_cortisol
+
+
+def enforce_col_types(df):
+    for col in df.columns:
+        if col == 'Sample ID' or col == 'Sex':
+            df[col] = df[col].astype('str')
+        elif col == 'Age (months)':
+            df[col] = df[col].astype('int64')
+        else:
+            df[col] = df[col].astype('float64')
+            
+            
+def male_or_female(row):
+    if row.upper() == 'M':
+        return 'Male'
+    elif row.upper() == 'F':
+        return 'Female'
+    else:
+        print(f'error... row == {row}')
+        return np.NaN
+            
+            
+def linear_regression_scores_X_y(df, y, y_name, dose_types):
+    for Xn in dose_types:
+        features_list = [[Xn], [Xn, 'Age (months)'], [Xn, 'Age (months)', 'encoded sex']]
+        for features in features_list:
+            X = df[features].values.reshape(-1, len(features))
+            fit_lm = LinearRegression().fit(X, y)
+            print(f'OLS | {features} vs. {y_name} --> R2: {fit_lm.score(X, y):.4f}')
+        print('')
