@@ -349,6 +349,9 @@ def male_or_female(row):
             
             
 def linear_regression_scores_X_y(df, y, y_name, dose_types):
+    """
+    specifically for EDA
+    """
     for Xn in dose_types:
         features_list = [[Xn], [Xn, 'Age (months)'], [Xn, 'Age (months)', 'encoded sex']]
         for features in features_list:
@@ -356,3 +359,6 @@ def linear_regression_scores_X_y(df, y, y_name, dose_types):
             fit_lm = LinearRegression().fit(X, y)
             print(f'OLS | {features} vs. {y_name} --> R2: {fit_lm.score(X, y):.4f}')
         print('')
+        
+        
+def cs
