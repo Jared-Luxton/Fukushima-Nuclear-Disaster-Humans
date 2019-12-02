@@ -361,4 +361,16 @@ def linear_regression_scores_X_y(df, y, y_name, dose_types):
         print('')
         
         
-def cs
+def plot_gam_partial_dependencies(gam):
+    for i, term in enumerate(gam.terms):
+        if term.isintercept:
+            continue
+
+        XX = gam.generate_X_grid(term=i)
+        pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+
+        plt.figure()
+        plt.plot(XX[:, term.feature], pdep)
+        plt.plot(XX[:, term.feature], confi, c='r', ls='--')
+        plt.title(repr(term))
+        plt.show()
