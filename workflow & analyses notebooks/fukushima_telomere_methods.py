@@ -11,6 +11,7 @@ from ast import literal_eval
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
+from pygam import LinearGAM, s, l, f
 
 
 def extract_boar_teloFISH_as_list(path):
@@ -339,9 +340,9 @@ def enforce_col_types(df):
             
             
 def male_or_female(row):
-    if row.upper() == 'M':
+    if row == 'M' or row == 'm':
         return 'Male'
-    elif row.upper() == 'F':
+    elif row == 'F' or row == 'f':
         return 'Female'
     else:
         print(f'error... row == {row}')
@@ -360,17 +361,38 @@ def linear_regression_scores_X_y(df, y, y_name, dose_types):
             print(f'OLS | {features} vs. {y_name} --> R2: {fit_lm.score(X, y):.4f}')
         print('')
         
+            
+def fit_gam_plot_dependencies(df=None, features=None, target=None, 
+                              basis_1=s, basis_2=False, summary=False):
+    X = df[features]
+    y = df[target]
+    
+    if basis_1 and basis_2:
+        gam = LinearGAM(basis_1(0, lam=60) + basis_2(1, lam=60), fit_intercept=True).fit(X, y)
+    
+    elif basis_1:
+        gam = LinearGAM(basis_1(0, lam=60), fit_intercept=True).fit(X, y)
         
-def plot_gam_partial_dependencies(gam):
+    else:
+        print('no basis called for features.. error')
+    
+    if summary:
+        print(gam.summary())
+    plot_gam_partial_dependencies(gam, features, target)
+    
+    
+def plot_gam_partial_dependencies(gam, features, target):
     for i, term in enumerate(gam.terms):
         if term.isintercept:
             continue
-
+            
         XX = gam.generate_X_grid(term=i)
         pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
 
         plt.figure()
         plt.plot(XX[:, term.feature], pdep)
         plt.plot(XX[:, term.feature], confi, c='r', ls='--')
-        plt.title(repr(term))
+        plt.xlabel(f'{features[i]}', fontsize=14)
+        plt.ylabel(f'{target}', fontsize=14)
+        plt.title(f'Functional dependence of Y on X', fontsize=14)
         plt.show()
