@@ -333,16 +333,16 @@ def enforce_col_types(df):
     for col in df.columns:
         if col == 'Sample ID' or col == 'Sex':
             df[col] = df[col].astype('str')
-        elif col == 'Age (months)':
+        elif col == 'Age (months)' or col == 'encode sex':
             df[col] = df[col].astype('int64')
         else:
             df[col] = df[col].astype('float64')
             
             
 def male_or_female(row):
-    if row == 'M' or row == 'm':
+    if row == 'M' or row == 'm' or row == 'Male':
         return 'Male'
-    elif row == 'F' or row == 'f':
+    elif row == 'F' or row == 'f' or row == 'Female':
         return 'Female'
     else:
         print(f'error... row == {row}')
