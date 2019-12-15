@@ -238,10 +238,11 @@ def linear_regression_graphs_between_variables(x=None, y=None, data=None,
 #         ax.savefig(f"../graphs/{x} vs {y} per sex.png", dpi=400)
 
 
-def graph_dose_age_vs_telos(df=None, x=None, x2=None, y=None):
+def graph_dose_age_vs_telos(df=None, x=None, x2=None, y=None, hue=None,):
     f, axes = plt.subplots(1, 2, figsize=(12,5), sharey=False, sharex=False)
     # dose vs. telomeres
     sns.regplot(x=x, y=y, data=df, ax=axes[0], 
+#                 hue=hue,
                 scatter_kws={'alpha':0.8, 'linewidth':1, 'edgecolor':'black', 's':df['Age (months)']*12, })
     axes[0].set_xlabel(x, fontsize=14)
     axes[0].set_ylabel(y, fontsize=14)
@@ -250,11 +251,12 @@ def graph_dose_age_vs_telos(df=None, x=None, x2=None, y=None):
 
     # age vs. telomeres
     sns.regplot(x=x2, y=y, data=df, ax=axes[1], 
+#                 hue=hue, 
                 scatter_kws={'alpha':0.8, 'linewidth':1, 'edgecolor':'black', 's':175, })
     axes[1].set_xlabel(x2, fontsize=14)
     axes[1].set_xlim(-4,55)
     axes[1].set_ylabel(y, fontsize=14)
-    if y == 'teloFISH means':
+    if y == 'Mean Telomere Length (FISH)':
         axes[1].set_ylim(0.2,1.6)
     if y == 'Mean Telomere Length (qPCR)':
         axes[1].set_ylim(0.6,1.8)
