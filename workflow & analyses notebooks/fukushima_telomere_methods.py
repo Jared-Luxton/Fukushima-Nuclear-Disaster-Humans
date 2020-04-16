@@ -16,7 +16,8 @@ from pygam import LinearGAM, s, l, f
 
 def extract_boar_teloFISH_as_list(path):
     """
-    FUNCTION FOR PULLING KELLY'S TELOFISH DATA FOR 40 BOARS into a LIST.. TO BE MADE INTO A DATAFRAME & JOINED W/ MAIN DATAFRAME if possible
+    FUNCTION FOR PULLING KELLY'S TELOFISH DATA FOR 40 BOARS into a LIST.. TO BE MADE INTO A DATAFRAME & JOINED W/ 
+    MAIN  DATAFRAME if possible
     These excel files take forever to load.. the objective here is to synthesize all the excel files for 
     telomere FISH data into one dataframe, then save that dataframe to csv file to be retrieved later
     loading one whole csv file containing all the data will be much, much faster than loading the parts of the whole 
@@ -27,6 +28,7 @@ def extract_boar_teloFISH_as_list(path):
         if 'Hyb' in file.name:
             print(f'Handling {file.name}...')
             full_name = path + file.name
+            # making a dict of excel sheets, where KEY:VALUE pairs are SAMPLE ID:TELO DATA
             telo_excel_dict = pd.read_excel(full_name, sheet_name=None, skiprows=4, usecols=[3], nrows=5000)
             if 'Telomere Template' in telo_excel_dict.keys():
                 del telo_excel_dict['Telomere Template']
@@ -34,22 +36,20 @@ def extract_boar_teloFISH_as_list(path):
             excel_file_list = []
             for sample_id, telos in telo_excel_dict.items():
                 telos_cleaned = clean_individ_telos(telos)
-
                 if sample_id != 'Control': 
                     excel_file_list.append([sample_id, telos_cleaned.values, np.mean(telos_cleaned)]) 
                 elif sample_id == 'Control':
                     control_value = np.mean(telos_cleaned)
 
-            
             #normalize teloFISH values by control value 
             for sample in excel_file_list:
+                sample_data = sample
                 #normalize individual telos
-                sample[1] = np.divide(sample[1], control_value)
+                sample_data[1] = np.divide(sample_data[1], control_value)
                 
                 #normalize telo means
-                sample[2] = np.divide(sample[2], control_value)
-                boar_teloFISH_list.append(sample)
-#                 print(f'{sample[0]} finished..')
+                sample_data[2] = np.divide(ssample_data[2], control_value)
+                boar_teloFISH_list.append(sample_data)
             
     print('Finished collecting boar teloFISH data')
     return boar_teloFISH_list
