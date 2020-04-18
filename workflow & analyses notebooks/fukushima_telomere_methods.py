@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from sklearn import datasets, linear_model
-from sklearn.preprocessing import Imputer
 from difflib import SequenceMatcher
 import seaborn as sns
 from statistics import mean 
@@ -12,6 +11,8 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
 from pygam import LinearGAM, s, l, f
+from matplotlib import lines
+import six
 
 
 def extract_boar_teloFISH_as_list(path):
@@ -263,23 +264,22 @@ def graph_dose_age_vs_telos(df=None, x=None, x2=None, y=None, hue=None,):
     axes[1].tick_params(labelsize=12)
             
             
-def score_linear_regressions(x=None, y=None, data=None):
+def score_linear_regressions(x=None, y=None, data=None, sexes=['Overall']):
     
-#     sexes = ['Male', 'Female', 'Overall']
-    sexes = ['Overall']
-
     for sex in sexes:
         if sex == 'Overall':
             X_r = data[x].values.reshape(-1, len(x))
             y_r = data[y].values.reshape(-1, 1)
             regression = LinearRegression().fit(X_r,y_r)
             print(f'Linear regression for {x} vs. {y}:\nOverall R2 is {regression.score(X_r, y_r):.4f}\n')
-
+            return regression
+        
         else:
             X_r = data[data['Sex'] == sex][x].values.reshape(-1, len(x))
             y_r = data[data['Sex'] == sex][y].values.reshape(-1, 1)
             regression = LinearRegression().fit(X_r,y_r)
             print(f"Linear regression for {x} vs. {y}:\nR2 for {sex}s is {regression.score(X_r, y_r):.4f}")
+            return regression
 
 
             
@@ -318,9 +318,9 @@ def score_logistic_regressions(x=None, y=None, data=None):
             
 def encode_sex(row):
     if row == 'Male':
-        return 1
-    elif row == 'Female':
         return 0
+    elif row == 'Female':
+        return 1
     else:
         print(f'ERROR.. row == {row}')
         
@@ -349,6 +349,15 @@ def male_or_female(row):
     else:
         print(f'error... row == {row}')
         return np.NaN
+    
+    
+def make_age_class(row):
+    if row <= 12:
+        return 'piglet'
+    elif row > 12 and row < 24:
+        return 'yearling'
+    elif row >= 20:
+        return 'adult'
             
             
 def linear_regression_scores_X_y(df, y, y_name, dose_types):
@@ -362,6 +371,7 @@ def linear_regression_scores_X_y(df, y, y_name, dose_types):
             fit_lm = LinearRegression().fit(X, y)
             print(f'OLS | {features} vs. {y_name} --> R2: {fit_lm.score(X, y):.4f}')
         print('')
+    return fit_lm
         
             
 def fit_gam_plot_dependencies(df=None, features=None, target=None, 
@@ -398,3 +408,114 @@ def plot_gam_partial_dependencies(gam, features, target):
         plt.ylabel(f'{target}', fontsize=14)
         plt.title(f'Functional dependence of Y on X', fontsize=14)
         plt.show()
+        
+        
+def graph_y_vs_dose_age_sex(df=None, x=None, x2=None, x3=None, y=None, hue=None,):
+    f, axes = plt.subplots(1, 3, figsize=(15,5), sharey=True, sharex=False)
+    
+    fontsize=16
+    
+    colors = sns.color_palette('Paired', len(df['Sample ID'].unique())), 
+    t = (0.7,)
+    test = [x + t for x in colors[0]]
+    
+    # DOSE vs. Y
+    sns.regplot(x=x, y=y, data=df, ax=axes[0], color=test[4],
+                scatter_kws={'alpha':.8, 'linewidth':1, 'edgecolor':'black', 's':df['Age (months)']*12})
+    
+    # AGE vs. Y
+    # male O markers
+    sns.regplot(x=x2, y=y, data=df[df['Sex'] == 'Male'], ax=axes[1], color=test[8], marker='o', fit_reg=False,
+                scatter_kws={'alpha':.8, 'linewidth':1, 'edgecolor':'black', 's':175,})
+    # female X markers
+    sns.regplot(x=x2, y=y, data=df[df['Sex'] == 'Female'], ax=axes[1], color=test[8], marker='X', fit_reg=False,
+                scatter_kws={'alpha':.8, 'linewidth':1, 'edgecolor':'black', 's':200,})
+    # plotting just the linear reg
+    sns.regplot(x=x2, y=y, data=df, ax=axes[1], color=test[8], scatter_kws={'s':0,})
+    
+    # creating custom legend
+    handles, labels = [], []
+    
+    line1 = lines.Line2D([], [], color=test[8], alpha=.8, marker='o', mew=1, mec='black')
+    line2 = lines.Line2D([], [], color=test[8], alpha=.8, marker='X', mew=1, mec='black')
+    
+    handles.append(line1)
+    handles.append(line2)
+    
+    labels.append('Male')
+    labels.append('Female')
+    
+    axes[1].legend(handles, labels, loc='upper right',ncol=1, fancybox=True, 
+                   fontsize=fontsize, markerscale=2)
+    
+    # SEX vs. Y
+    palette_cust = {'Male':test[0], 'Female':test[10]}
+    sns.boxplot(x=x3, y=y, dodge=True, palette=palette_cust, order=['Male', 'Female'], data=df, ax=axes[2],)
+    
+    for patch in axes[2].artists:
+        r, g, b, a = patch.get_facecolor()
+        patch.set_facecolor((r, g, b, .6))
+        
+    sns.swarmplot(x=x3, y=y, dodge=True, palette=palette_cust, order=['Male', 'Female'], data=df, ax=axes[2],
+                  size=12, edgecolor='black', linewidth=1, **{'alpha':0.8})
+
+    x_name = 'Reasonable Total Life Time Dose (mGy)'
+    axes[0].set_xlabel(x_name, fontsize=fontsize)
+    axes[0].set_ylabel(y, fontsize=fontsize)
+    axes[0].tick_params(labelsize=fontsize)
+    
+    axes[1].set_xlabel(x2, fontsize=fontsize)
+    axes[1].set_ylabel('', fontsize=fontsize)
+    axes[1].tick_params(labelsize=fontsize)
+    
+    axes[2].set_xlabel(x3, fontsize=fontsize)
+    axes[2].set_ylabel('', fontsize=fontsize)
+    axes[2].tick_params(labelsize=fontsize)
+
+#     axes[0].set_xlim(-50,700)
+#     axes[1].set_xlim(-4,55)
+    if y == 'Mean Telomere Length (FISH)':
+        axes[0].set_ylim(0.2,1.6)
+        axes[1].set_ylim(0.2,1.6)
+        y_name = y
+    elif y == 'Mean Telomere Length (qPCR)':
+        axes[0].set_ylim(0.6,1.8)
+        axes[1].set_ylim(0.6,1.8)
+        y_name = y
+    elif y == 'Cortisol (pg/mg)':
+        axes[0].set_ylim(-3, 35)
+        y_name = y.replace('/', '')
+    elif y == 'Average # of dicentrics per cell':
+        axes[0].set_ylim(-0.005, .065)
+        y_name = y
+    
+    plt.tight_layout()
+    plt.savefig(f'graphs/main figures/{y_name} vs {x} and {x2}.png', dpi=600, bbox_inches='tight')
+    
+    
+def render_mpl_table(data, col_width=3.0, row_height=0.625, font_size=14,
+                     header_color='#40466e', row_colors=['#f1f1f2', 'w'], edge_color='black',
+                     bbox=[0, 0, 1, 1], header_columns=0, path=None,
+                     ax=None, **kwargs):
+    if ax is None:
+        size = (np.array(data.shape[::-1]) + np.array([0, 1])) * np.array([col_width, row_height])
+        fig, ax = plt.subplots(figsize=size)
+        ax.axis('off')
+
+    mpl_table = ax.table(cellText=data.values, bbox=bbox, colLabels=data.columns, **kwargs)
+
+    mpl_table.auto_set_font_size(False)
+    mpl_table.set_fontsize(font_size)
+
+    for k, cell in six.iteritems(mpl_table._cells):
+        cell.set_edgecolor(edge_color)
+        if k[0] == 0 or k[1] < header_columns:
+            cell.set_text_props(weight='bold', color='w')
+            cell.set_facecolor(header_color)
+        else:
+            cell.set_facecolor(row_colors[k[0]%len(row_colors) ])
+    plt.tight_layout()
+    
+    if path != None:
+        plt.savefig(path, dpi=600, bbox_inches='tight')
+    plt.close()
