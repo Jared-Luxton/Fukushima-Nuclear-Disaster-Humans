@@ -474,7 +474,7 @@ def graph_y_vs_dose_age_sex(df=None, x=None, x2=None, x3=None, y=None, hue=None,
 
 #     axes[0].set_xlim(-50,700)
 #     axes[1].set_xlim(-4,55)
-    if y == 'Mean Telomere Length (FISH)':
+    if y == 'Mean Telomere Length (Telo-FISH)':
         axes[0].set_ylim(0.2,1.6)
         axes[1].set_ylim(0.2,1.6)
         y_name = y
