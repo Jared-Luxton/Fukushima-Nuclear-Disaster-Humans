@@ -49,7 +49,7 @@ def extract_boar_teloFISH_as_list(path):
                 sample_data[1] = np.divide(sample_data[1], control_value)
                 
                 #normalize telo means
-                sample_data[2] = np.divide(ssample_data[2], control_value)
+                sample_data[2] = np.divide(sample_data[2], control_value)
                 boar_teloFISH_list.append(sample_data)
             
     print('Finished collecting boar teloFISH data')
@@ -410,7 +410,8 @@ def plot_gam_partial_dependencies(gam, features, target):
         plt.show()
         
         
-def graph_y_vs_dose_age_sex(df=None, x=None, x2=None, x3=None, y=None, hue=None,):
+def graph_y_vs_dose_age_sex(df=None, x=None, x2=None, x3=None, y=None, hue=None, 
+                            dose_x_size='Age (months)', multiplier=12):
     f, axes = plt.subplots(1, 3, figsize=(15,5), sharey=True, sharex=False)
     
     fontsize=16
@@ -421,7 +422,7 @@ def graph_y_vs_dose_age_sex(df=None, x=None, x2=None, x3=None, y=None, hue=None,
     
     # DOSE vs. Y
     sns.regplot(x=x, y=y, data=df, ax=axes[0], color=test[4],
-                scatter_kws={'alpha':.8, 'linewidth':1, 'edgecolor':'black', 's':df['Age (months)']*12})
+                scatter_kws={'alpha':.8, 'linewidth':1, 'edgecolor':'black', 's':df[dose_x_size]*multiplier})
     
     # AGE vs. Y
     # male O markers
